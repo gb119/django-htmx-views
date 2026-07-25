@@ -178,6 +178,11 @@ publishes:
 - the noarch Conda package to the `phygbu` Anaconda channel with the `main`
   label.
 
+The release workflow can also be started manually from a branch containing
+workflow-only fixes. Supply the existing release tag in the `release_tag`
+input; the workflow definition comes from the selected branch, while the
+package source is checked out from that tag.
+
 Configure these GitHub Actions repository secrets before publishing:
 
 - `PYPI_TOKEN`: a PyPI API token authorised for `django-htmx-views`;

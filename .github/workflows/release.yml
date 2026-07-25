@@ -4,6 +4,12 @@ on:
   release:
     types:
       - published
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag whose package source should be published
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -16,9 +22,13 @@ jobs:
   publish:
     name: Build and publish Python and Conda packages
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
     steps:
       - name: Check out the release
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
 
       - name: Create the package-build environment
         uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca
@@ -31,8 +41,6 @@ jobs:
           show-channel-urls: true
 
       - name: Verify the release tag matches the package version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           PACKAGE_VERSION="$(
             python -c 'from htmx_views import __version__; print(__version__)'
@@ -53,15 +61,26 @@ jobs:
           python -m build
           python -m twine check dist/*
 
-      - name: Build and upload the Conda package
-        uses: uibcdf/action-build-and-upload-conda-packages@4940704d2be7906d3bda5b00e3c3e4472fd7808f
-        with:
-          label: main
-          meta_yaml_dir: conda-recipe
-          overwrite: false
-          python-version: "3.12"
-          token: ${{ secrets.ANACONDA }}
-          user: phygbu
+      - name: Build the Conda package
+        id: conda-package
+        run: |
+          CONDA_PACKAGE="$(conda-build conda-recipe --output)"
+          test -n "$CONDA_PACKAGE"
+          conda-build conda-recipe
+          test -f "$CONDA_PACKAGE"
+          echo "path=$CONDA_PACKAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the Conda package
+        env:
+          ANACONDA_API_TOKEN: ${{ secrets.ANACONDA }}
+          CONDA_PACKAGE: ${{ steps.conda-package.outputs.path }}
+        run: |
+          test -n "$ANACONDA_API_TOKEN"
+          anaconda upload \
+            --user phygbu \
+            --label main \
+            --no-progress \
+            "$CONDA_PACKAGE"
 
       - name: Upload Python distributions to PyPI
         env:
