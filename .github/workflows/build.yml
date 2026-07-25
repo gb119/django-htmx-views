@@ -39,7 +39,9 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: django-htmx-views-build
-          auto-activate-base: false
+          auto-activate: false
+          channel-priority: strict
+          conda-remove-defaults: true
           environment-file: conda-recipe/build-env.yml
           show-channel-urls: true
       - name: Resolve package output
