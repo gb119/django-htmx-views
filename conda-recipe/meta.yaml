@@ -1,0 +1,43 @@
+{% set name = "django-htmx-views" %}
+{% set version = "0.1.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  path: ..
+
+build:
+  noarch: python
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+
+requirements:
+  host:
+    - python >=3.10
+    - pip
+    - setuptools >=77
+    - wheel
+  run:
+    - python >=3.10
+    - django >=4.2
+    - django-htmx >=1.17
+
+test:
+  imports:
+    - htmx_views
+    - htmx_views.apps
+    - htmx_views.views
+  commands:
+    - python -c "from django.views import View; import htmx_views.views; assert hasattr(View, '_non_htmx_dispatch')"
+
+about:
+  home: https://github.com/gb119/django-htmx-views
+  summary: Reusable Django view services for HTMX-enabled applications
+  license: MIT
+  license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - gb119

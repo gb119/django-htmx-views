@@ -1,0 +1,11 @@
+name: django-htmx-views-build
+channels:
+  - conda-forge
+dependencies:
+  - anaconda-client
+  - build
+  - conda-build
+  - python=3.12
+  - twine
+  - wheel
+
