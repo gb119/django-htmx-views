@@ -38,20 +38,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          activate-environment: build
+          activate-environment: django-htmx-views-build
           auto-activate-base: false
-          channels: conda-forge
-          channel-priority: strict
-          python-version: "3.12"
-      - name: Install conda-build
-        shell: bash -el {0}
-        run: conda install --yes conda-build
+          environment-file: conda-recipe/build-env.yml
+          show-channel-urls: true
       - name: Resolve package output
         shell: bash -el {0}
-        run: echo "CONDA_PACKAGE=$(conda build conda-recipe --output)" >> "$GITHUB_ENV"
+        run: |
+          CONDA_PACKAGE="$(conda-build conda-recipe --output)"
+          test -n "$CONDA_PACKAGE"
+          echo "CONDA_PACKAGE=$CONDA_PACKAGE" >> "$GITHUB_ENV"
       - name: Build Conda package
         shell: bash -el {0}
-        run: conda build conda-recipe
+        run: conda-build conda-recipe
       - uses: actions/upload-artifact@v4
         with:
           name: conda-package

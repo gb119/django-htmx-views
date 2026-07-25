@@ -146,7 +146,7 @@ python -m twine check dist/*
 Build the noarch Conda package with `conda-build`:
 
 ```console
-conda build conda-recipe
+conda-build conda-recipe
 ```
 
 The GitHub Actions build workflow runs the tests and produces both Python and
