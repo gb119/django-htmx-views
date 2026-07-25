@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "django-htmx-views"
+version = "0.1.0"
+description = "Reusable HTMX view mixins and linked-select helpers for Django"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "gb119"}]
+dependencies = [
+  "Django>=4.2",
+  "django-ajax-selects>=3.0",
+  "django-htmx>=1.17",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-django>=4.8",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "test_settings"
+testpaths = ["tests"]
+pythonpath = ["."]
