@@ -170,8 +170,9 @@ releases and pre-releases, and can also be started manually.
 ## Publishing a release
 
 Creating a GitHub release, including a pre-release, runs the release workflow.
-It verifies that the release tag (for example, `v0.1.0`) matches the version in
-`pyproject.toml`, reruns the tests, builds both package formats, and publishes:
+It verifies that the release tag (for example, `vX.Y.Z`) matches
+`htmx_views.__version__`, reruns the tests, builds both package formats, and
+publishes:
 
 - the wheel and source distribution to PyPI;
 - the noarch Conda package to the `phygbu` Anaconda channel with the `main`

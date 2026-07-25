@@ -3,7 +3,6 @@
 # Python imports
 import os
 import sys
-from importlib.metadata import PackageNotFoundError, version as distribution_version
 from pathlib import Path
 
 # Django imports
@@ -15,6 +14,9 @@ from better import better_theme_path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+# package imports
+from htmx_views import __version__  # noqa: E402
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 django.setup()
 
@@ -22,12 +24,8 @@ project = "django-htmx-views"
 author = "Gavin Burnell"
 copyright = "2026, Gavin Burnell"
 
-try:
-    release = distribution_version("django-htmx-views")
-except PackageNotFoundError:
-    release = "0.1.0"
-
-version = release
+release = __version__
+version = __version__
 
 extensions = [
     "sphinx.ext.autodoc",

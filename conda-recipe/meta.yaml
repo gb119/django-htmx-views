@@ -1,5 +1,10 @@
 {% set name = "django-htmx-views" %}
-{% set version = "0.1.0" %}
+{% set version_match = load_file_regex(
+    load_file="../htmx_views/__init__.py",
+    regex_pattern='(?m)^__version__ = "([^"]+)"',
+    from_recipe_dir=True
+) %}
+{% set version = version_match.group(1) %}
 
 package:
   name: {{ name|lower }}
