@@ -152,6 +152,21 @@ conda build conda-recipe
 The GitHub Actions build workflow runs the tests and produces both Python and
 Conda package artifacts.
 
+## Documentation
+
+The full documentation is published at
+[gb119.github.io/django-htmx-views](https://gb119.github.io/django-htmx-views/).
+
+Build it locally with:
+
+```console
+python -m pip install -e ".[docs]"
+python -m sphinx -W --keep-going -b html docs/source docs/build/html
+```
+
+The documentation workflow rebuilds and deploys GitHub Pages for published
+releases and pre-releases, and can also be started manually.
+
 ## Publishing a release
 
 Creating a GitHub release, including a pre-release, runs the release workflow.
