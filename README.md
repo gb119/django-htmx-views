@@ -1,5 +1,9 @@
 [![Tests](https://github.com/gb119/django-htmx-views/actions/workflows/tests.yml/badge.svg)](https://github.com/gb119/django-htmx-views/actions/workflows/tests.yml)
 [![Build](https://github.com/gb119/django-htmx-views/actions/workflows/build.yml/badge.svg)](https://github.com/gb119/django-htmx-views/actions/workflows/build.yml)
+[![GitHub version](https://badge.fury.io/gh/gb119%2Fdjango-htmx-views.svg)](https://badge.fury.io/gh/gb119%2Fdjango-htmx-views)
+![GitHub Release Date](https://img.shields.io/github/release-date/gb119/django-htmx-views)
+[![PyPI version](https://badge.fury.io/py/django-htmx-views.svg)](https://badge.fury.io/py/django-htmx-views)
+[![Conda Version](https://anaconda.org/phygbu/django-htmx-views/badges/version.svg)](https://anaconda.org/phygbu/django-htmx-views)
 
 # django-htmx-views
 
