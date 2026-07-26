@@ -1,3 +1,5 @@
+[![Tests](https://github.com/gb119/django-htmx-views/actions/workflows/tests.yml/badge.svg)](https://github.com/gb119/django-htmx-views/actions/workflows/tests.yml)
+
 # django-htmx-views
 
 Reusable Django view mixins and widgets for building HTMX-enabled applications.
