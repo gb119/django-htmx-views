@@ -20,6 +20,8 @@ verification details.
 - HTMX-specific templates, context data, and context object names.
 - HTMX-aware form-valid and form-invalid handlers.
 - Optional linked `<select>` widgets backed by `django-ajax-selects`.
+- Optional Bootstrap 5 modal, accordion, and lazy-pagination template
+  components.
 
 ## Installation
 
@@ -33,6 +35,12 @@ Install linked-select support as well:
 
 ```console
 python -m pip install "django-htmx-views[linked-selects]"
+```
+
+Install the Bootstrap 5 integration, including `django-bootstrap5`, with:
+
+```console
+python -m pip install "django-htmx-views[bootstrap5]"
 ```
 
 Add the app and `django-htmx` middleware to the host project's settings:
@@ -127,12 +135,66 @@ raises an actionable `ImportError`; the core view mixins remain usable.
 The former `htmx_views.views.LinkedSelectEndpointView` import remains available
 for compatibility.
 
+## Bootstrap 5 template components
+
+Load `htmx_views_bootstrap` to use the optional modal and accordion components.
+The modal tags separate the persistent page target from the content returned by
+an HTMX request:
+
+```django
+{% load htmx_views_bootstrap %}
+
+{% bootstrap_modal_target size="lg" %}
+```
+
+```django
+{% load django_bootstrap5 htmx_views_bootstrap %}
+
+{% bootstrap_modal_content title="Manage document" %}
+  <form method="post" hx-post="{{ post_url }}">
+    {% csrf_token %}
+    {% bootstrap_form form layout="horizontal" %}
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+{% endbootstrap_modal_content %}
+```
+
+The modal-content wrapper supplies `hx-target="#dialog"`, which is inherited by
+the form and other HTMX controls within it. A complete accordion uses nested
+block tags:
+
+```django
+{% bootstrap_accordion id="documents" %}
+  {% for category, documents in grouped_documents.items %}
+    {% bootstrap_accordion_item id=category.slug title=category.name expanded=forloop.first %}
+      {% include "documents/_list.html" %}
+    {% endbootstrap_accordion_item %}
+  {% endfor %}
+{% endbootstrap_accordion %}
+```
+
+An accordion item can load its body on first expansion by passing `hx_get`.
+Lazy paged lists can replace their loading sentinel with the next batch:
+
+```django
+{% bootstrap_lazy_page url=request.path page=table.page method="post" element="tr" colspan=column_count %}
+```
+
+The tag omits itself on the final `Page`, adds the next page number to the URL,
+and defaults to `hx-trigger="intersect once"` and `hx-swap="outerHTML"`. Lists
+with a custom continuation token can instead pass a precomputed URL and
+`when=next_code`.
+
+See the
+[Bootstrap template components documentation](https://gb119.github.io/django-htmx-views/bootstrap-components.html)
+for the complete options and integration requirements.
+
 ## Development and builds
 
 Create a development environment and run the tests:
 
 ```console
-python -m pip install -e ".[test,linked-selects]"
+python -m pip install -e ".[test,linked-selects,bootstrap5]"
 python -m pytest
 ```
 

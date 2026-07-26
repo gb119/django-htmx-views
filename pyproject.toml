@@ -45,6 +45,9 @@ docs = [
 linked-selects = [
   "django-ajax-selects>=2.2",
 ]
+bootstrap5 = [
+  "django-bootstrap5>=23.4",
+]
 test = [
   "build>=1.2",
   "django-ajax-selects>=2.2",

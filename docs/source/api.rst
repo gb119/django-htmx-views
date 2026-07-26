@@ -22,10 +22,15 @@ Widgets
    :members:
    :show-inheritance:
 
+Bootstrap template tags
+-----------------------
+
+.. automodule:: htmx_views.templatetags.htmx_views_bootstrap
+   :members:
+
 Application configuration
 -------------------------
 
 .. automodule:: htmx_views.apps
    :members:
    :show-inheritance:
-

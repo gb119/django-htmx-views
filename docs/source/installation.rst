@@ -13,6 +13,13 @@ Install the optional linked-select integration when it is needed:
 
    python -m pip install "django-htmx-views[linked-selects]"
 
+Install the optional Bootstrap 5 integration, including
+``django-bootstrap5``, when using the Bootstrap template components:
+
+.. code-block:: console
+
+   python -m pip install "django-htmx-views[bootstrap5]"
+
 Django settings
 ---------------
 
@@ -30,6 +37,10 @@ middleware:
        # ...
        "django_htmx.middleware.HtmxMiddleware",
    ]
+
+Add ``"django_bootstrap5"`` to ``INSTALLED_APPS`` as well when using its form,
+button, CSS, or JavaScript template tags. The structural tags supplied by
+``htmx_views`` do not load Bootstrap assets automatically.
 
 Migrating an existing application
 ---------------------------------

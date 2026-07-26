@@ -11,7 +11,9 @@ The package supports:
 * handlers selected by trigger name, trigger ID, or target ID;
 * HTMX-specific templates and context data;
 * HTMX-aware form validation handlers; and
-* optional linked selects backed by ``django-ajax-selects``.
+* optional linked selects backed by ``django-ajax-selects``; and
+* optional Bootstrap 5 modal, accordion, and lazy-pagination template
+  components.
 
 .. toctree::
    :maxdepth: 2
@@ -20,5 +22,5 @@ The package supports:
    installation
    views
    linked-selects
+   bootstrap-components
    api
-
