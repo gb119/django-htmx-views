@@ -20,8 +20,8 @@ verification details.
 - HTMX-specific templates, context data, and context object names.
 - HTMX-aware form-valid and form-invalid handlers.
 - Optional linked `<select>` widgets backed by `django-ajax-selects`.
-- Optional Bootstrap 5 modal, accordion, and lazy-pagination template
-  components.
+- Optional Bootstrap 3 button migration helpers and Bootstrap 5 modal,
+  accordion, and lazy-pagination template components.
 
 ## Installation
 
@@ -137,9 +137,24 @@ for compatibility.
 
 ## Bootstrap 5 template components
 
-Load `htmx_views_bootstrap` to use the optional modal and accordion components.
-The modal tags separate the persistent page target from the content returned by
-an HTMX request:
+Load `htmx_views_bootstrap` after `django_bootstrap5` to restore the Bootstrap
+3 `bootstrap_icon` and `buttons` helpers and add the former `icon` argument to
+`bootstrap_button`:
+
+```django
+{% load django_bootstrap5 htmx_views_bootstrap %}
+
+{% bootstrap_button "Save" button_type="submit" icon="floppy-disk" %}
+{% buttons submit="Save" reset="Cancel" %}
+{% endbuttons %}
+```
+
+Icons use Bootstrap Icons, which the consuming application must load
+separately. Common Glyphicon names, `btn-default`, and legacy button sizes are
+translated to Bootstrap 5 equivalents.
+
+The modal tags separate the persistent page target from the content returned
+by an HTMX request:
 
 ```django
 {% load htmx_views_bootstrap %}

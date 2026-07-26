@@ -1,16 +1,143 @@
 """Tests for the optional Bootstrap 5 template components."""
 
 # Django imports
+# external imports
+import pytest
 from django.core.paginator import Paginator
 from django.template import Context, Template, TemplateSyntaxError
 
-# external imports
-import pytest
+# package imports
+from htmx_views import _optional
 
 
 def render_template(source, context=None):
     """Render a template using the package's configured Django engine."""
     return Template("{% load htmx_views_bootstrap %}" + source).render(Context(context or {}))
+
+
+class TestBootstrap3ButtonCompatibility:
+    """Tests for the Bootstrap 3 button migration helpers."""
+
+    def test_renders_bootstrap_icon_and_translates_common_glyphicon(self):
+        """A legacy Glyphicon name becomes decorative Bootstrap Icons markup."""
+        rendered = render_template('{% bootstrap_icon "info-sign" %}')
+
+        assert rendered == '<i aria-hidden="true" class="bi bi-info-circle"></i>'
+
+    def test_labelled_icon_has_accessible_attributes(self):
+        """A titled icon exposes its label to assistive technology."""
+        rendered = render_template(
+            '{% bootstrap_icon "star" title=title extra_classes="text-warning" %}', {"title": "Favourite"}
+        )
+
+        assert 'class="bi bi-star text-warning"' in rendered
+        assert 'aria-label="Favourite"' in rendered
+        assert 'role="img"' in rendered
+        assert 'title="Favourite"' in rendered
+
+    def test_bootstrap_button_supports_legacy_icon_class_and_size(self):
+        """Legacy button options are translated to Bootstrap 5 equivalents."""
+        rendered = render_template(
+            '{% bootstrap_button "Save" button_type="submit" icon="floppy-disk" '
+            'button_class="btn-default" size="large" %}'
+        )
+
+        assert '<button class="btn btn-secondary btn-lg" type="submit">' in rendered
+        assert '<i aria-hidden="true" class="bi bi-floppy me-1"></i>Save' in rendered
+
+    def test_loading_after_django_bootstrap5_overrides_its_button_tag(self):
+        """Documented library order selects the icon-compatible button tag."""
+        rendered = Template(
+            '{% load django_bootstrap5 htmx_views_bootstrap %}{% bootstrap_button "Edit" icon="edit" %}'
+        ).render(Context())
+
+        assert '<i aria-hidden="true" class="bi bi-pencil-square me-1"></i>Edit' in rendered
+
+    def test_button_supports_end_icon_and_accessible_icon_only_content(self):
+        """Icons can follow text and icon-only controls can receive a button label."""
+        rendered = render_template(
+            '{% bootstrap_button "" button_type="button" icon="remove" aria_label="Close" %}'
+            '{% bootstrap_button "Next" href="/next/" icon="arrow-right" icon_position="end" %}'
+        )
+
+        assert 'aria-label="Close"' in rendered
+        assert '<i aria-hidden="true" class="bi bi-x-lg"></i>' in rendered
+        assert 'Next<i aria-hidden="true" class="bi bi-arrow-right ms-1"></i>' in rendered
+        assert 'href="/next/"' in rendered
+        assert 'role="button"' in rendered
+
+    def test_buttons_block_wraps_custom_content_and_generated_actions(self):
+        """The legacy block retains nested controls and adds configured actions."""
+        rendered = render_template(
+            '{% buttons submit="Save" reset="Cancel" submit_icon="floppy-disk" size="small" %}'
+            '<a class="btn btn-link" href="/">Back</a>'
+            "{% endbuttons %}"
+        )
+
+        assert '<div class="mb-3 d-flex flex-wrap gap-2">' in rendered
+        assert '<a class="btn btn-link" href="/">Back</a>' in rendered
+        assert '<button class="btn btn-primary btn-sm" type="submit">' in rendered
+        assert '<button class="btn btn-secondary btn-sm" type="reset">Cancel</button>' in rendered
+        assert rendered.index('type="submit"') < rendered.index(">Back</a>")
+
+    def test_bootstrap_buttons_alias_uses_explicit_closing_tag(self):
+        """The namespaced alias avoids collisions in new templates."""
+        rendered = render_template(
+            '{% bootstrap_buttons submit="Continue" wrapper_class="d-grid" %}{% endbootstrap_buttons %}'
+        )
+
+        assert '<div class="d-grid">' in rendered
+        assert 'type="submit">Continue</button>' in rendered
+
+    def test_button_content_and_attributes_remain_escaped(self):
+        """Compatibility options retain Django's normal auto-escaping."""
+        rendered = render_template(
+            '{% bootstrap_button content button_type="button" icon="star" aria_label=label %}',
+            {"content": "<script>alert(1)</script>", "label": 'Save" onclick="alert(1)'},
+        )
+
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in rendered
+        assert 'aria-label="Save&quot; onclick=&quot;alert(1)"' in rendered
+        assert "<script>" not in rendered
+
+    def test_missing_optional_renderer_has_installation_guidance(self, monkeypatch):
+        """The button tag explains how to install its optional renderer."""
+        missing_dependency = ModuleNotFoundError("No module named 'django_bootstrap5'")
+        missing_dependency.name = "django_bootstrap5"
+
+        def raise_missing_dependency(_module_name):
+            raise missing_dependency
+
+        monkeypatch.setattr(_optional, "import_module", raise_missing_dependency)
+
+        with pytest.raises(ImportError, match=r"django-htmx-views\[bootstrap5\]"):
+            _optional.get_bootstrap5_render_button()
+
+    def test_transitive_optional_import_error_is_not_hidden(self, monkeypatch):
+        """An error inside django-bootstrap5 is preserved for diagnosis."""
+        transitive_error = ModuleNotFoundError("No module named 'unexpected_dependency'")
+        transitive_error.name = "unexpected_dependency"
+
+        def raise_transitive_error(_module_name):
+            raise transitive_error
+
+        monkeypatch.setattr(_optional, "import_module", raise_transitive_error)
+
+        with pytest.raises(ModuleNotFoundError, match="unexpected_dependency"):
+            _optional.get_bootstrap5_render_button()
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            '{% bootstrap_icon "invalid icon" %}',
+            '{% bootstrap_button "Save" icon="star" icon_position="middle" %}',
+            '{% buttons unknown="value" %}{% endbuttons %}',
+        ],
+    )
+    def test_rejects_invalid_compatibility_options(self, source):
+        """Invalid icon names, positions, and block options fail clearly."""
+        with pytest.raises(TemplateSyntaxError):
+            render_template(source)
 
 
 class TestBootstrapModalTarget:

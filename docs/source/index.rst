@@ -12,8 +12,8 @@ The package supports:
 * HTMX-specific templates and context data;
 * HTMX-aware form validation handlers; and
 * optional linked selects backed by ``django-ajax-selects``; and
-* optional Bootstrap 5 modal, accordion, and lazy-pagination template
-  components.
+* optional Bootstrap 3 button migration helpers and Bootstrap 5 modal,
+  accordion, and lazy-pagination template components.
 
 .. toctree::
    :maxdepth: 2

@@ -7,6 +7,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "ajax_select",
+    "django_bootstrap5",
     "htmx_views",
 ]
 ROOT_URLCONF = "test_urls"

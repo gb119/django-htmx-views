@@ -1,12 +1,12 @@
 Bootstrap template components
 =============================
 
-The optional ``htmx_views_bootstrap`` template-tag library generates the
-Bootstrap 5 structure and accessibility attributes needed by common
-HTMX-powered modal and accordion interfaces.
+The optional ``htmx_views_bootstrap`` template-tag library provides Bootstrap
+3 button migration helpers and generates the Bootstrap 5 structure and
+accessibility attributes needed by common HTMX-powered interfaces.
 
 Install the ``bootstrap5`` extra and add ``django_bootstrap5`` to
-``INSTALLED_APPS`` when using its form or asset tags:
+``INSTALLED_APPS`` when using the button, form, or asset tags:
 
 .. code-block:: console
 
@@ -23,6 +23,78 @@ Install the ``bootstrap5`` extra and add ``django_bootstrap5`` to
 The components do not load CSS or JavaScript. Include Bootstrap 5 in the page
 through ``django-bootstrap5`` or the consuming application's existing asset
 pipeline.
+
+Bootstrap 3 button migration
+----------------------------
+
+``django-bootstrap5`` retained ``bootstrap_button`` but removed
+``bootstrap_icon`` and the ``buttons`` block. Load this library after
+``django_bootstrap5`` to add those helpers and extend ``bootstrap_button`` with
+the former ``icon`` argument:
+
+.. code-block:: django
+
+   {% load django_bootstrap5 htmx_views_bootstrap %}
+
+   {% bootstrap_icon "info-sign" title="Information" %}
+   {% bootstrap_button "Save" button_type="submit" icon="floppy-disk" %}
+
+The loading order is deliberate: ``htmx_views_bootstrap`` registers its
+conversion-friendly ``bootstrap_button`` after the original tag. It delegates
+the final button rendering to ``django-bootstrap5``, so arguments such as
+``button_type``, ``href``, ``name``, and ``extra_classes`` remain available.
+
+The compatibility tag also translates ``btn-default`` to ``btn-secondary``.
+The old ``xs``, ``small``, ``medium``, and ``large`` size values become
+``sm``, ``sm``, ``md``, and ``lg`` respectively. ``icon_position="end"`` puts
+an icon after the content. For example, an accessible icon-only control can
+use ``aria_label``:
+
+.. code-block:: django
+
+   {% bootstrap_button "" button_type="button" icon="remove" aria_label="Close" %}
+
+``bootstrap_icon`` uses the separate `Bootstrap Icons
+<https://icons.getbootstrap.com/>`_ font rather than Bootstrap 3's removed
+Glyphicons. Include Bootstrap Icons through the application's asset pipeline,
+or add its stylesheet to the page. Untitled icons are marked decorative with
+``aria-hidden="true"``; passing ``title`` gives a standalone icon an accessible
+label.
+
+Common legacy names such as ``floppy-disk``, ``info-sign``, ``ok``,
+``remove``, and ``warning-sign`` are mapped to their closest Bootstrap Icons
+counterparts. Names without an explicit mapping are treated as Bootstrap Icon
+names, so existing templates can be migrated incrementally. The
+``glyphicon-`` and ``bi-`` prefixes may be omitted.
+
+Button blocks
+~~~~~~~~~~~~~
+
+The former ``buttons`` block is available for source-compatible form action
+rows:
+
+.. code-block:: django
+
+   {% buttons submit="Save" reset="Cancel" submit_icon="floppy-disk" %}
+     <a class="btn btn-link" href="{% url 'documents:list' %}">Back</a>
+   {% endbuttons %}
+
+The optional submit and reset buttons are rendered first, followed by nested
+content, matching the old tag's ordering. The wrapper defaults to Bootstrap 5
+spacing utilities ``mb-3 d-flex flex-wrap gap-2``. Its options are ``submit``,
+``reset``, ``submit_class``, ``reset_class``, ``submit_icon``, ``reset_icon``,
+``size``, and ``wrapper_class``.
+
+New templates can use the collision-resistant
+``bootstrap_buttons``/``endbootstrap_buttons`` names for the same block:
+
+.. code-block:: django
+
+   {% bootstrap_buttons submit="Continue" wrapper_class="d-grid" %}
+   {% endbootstrap_buttons %}
+
+The old jQuery loader is intentionally not ported: Bootstrap 5 and HTMX do not
+require jQuery.
 
 HTMX modal dialogs
 ------------------

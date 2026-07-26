@@ -1,9 +1,9 @@
-"""Provide Bootstrap 5 modal and accordion template components.
+"""Provide Bootstrap 5 template components and migration helpers.
 
-The tags in this module generate the structural Bootstrap markup and related
-accessibility attributes used by HTMX-powered interfaces.  They do not load
-Bootstrap assets; the consuming application remains responsible for including
-Bootstrap's CSS and JavaScript.
+The tags in this module generate button, modal, accordion, and lazy-pagination
+markup with related accessibility attributes. They do not load Bootstrap or
+Bootstrap Icons assets; the consuming application remains responsible for
+including the required CSS and JavaScript.
 """
 
 # Python imports
@@ -14,7 +14,10 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from django import template
 from django.forms.utils import flatatt
 from django.template.base import token_kwargs
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
+
+# package imports
+from htmx_views._optional import get_bootstrap5_render_button
 
 register = template.Library()
 
@@ -23,6 +26,50 @@ _HTML_ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
 _MODAL_SIZES = {"sm", "lg", "xl"}
 _LAZY_PAGE_ELEMENTS = {"div", "li", "tr"}
 _LAZY_PAGE_METHODS = {"get", "post"}
+_BUTTON_CLASS_ALIASES = {"btn-default": "btn-secondary"}
+_BUTTON_SIZE_ALIASES = {
+    "xs": "sm",
+    "small": "sm",
+    "medium": "md",
+    "large": "lg",
+}
+BOOTSTRAP3_ICON_ALIASES = {
+    "download-alt": "download",
+    "edit": "pencil-square",
+    "exclamation-sign": "exclamation-circle",
+    "eye-close": "eye-slash",
+    "eye-open": "eye",
+    "floppy-disk": "floppy",
+    "folder-close": "folder",
+    "folder-open": "folder2-open",
+    "info-sign": "info-circle",
+    "list-alt": "card-list",
+    "log-in": "box-arrow-in-right",
+    "log-out": "box-arrow-right",
+    "map-marker": "geo-alt",
+    "minus-sign": "dash-circle",
+    "new-window": "box-arrow-up-right",
+    "off": "power",
+    "ok": "check-lg",
+    "ok-circle": "check-circle",
+    "ok-sign": "check-circle",
+    "picture": "image",
+    "plus-sign": "plus-circle",
+    "question-sign": "question-circle",
+    "remove": "x-lg",
+    "remove-circle": "x-circle",
+    "remove-sign": "x-circle",
+    "repeat": "arrow-clockwise",
+    "resize-full": "arrows-fullscreen",
+    "resize-small": "fullscreen-exit",
+    "save": "floppy",
+    "star-empty": "star",
+    "th": "grid-3x3",
+    "th-large": "grid-3x3-gap-fill",
+    "th-list": "list-ul",
+    "time": "clock",
+    "warning-sign": "exclamation-triangle",
+}
 
 
 def _validate_html_id(value, argument_name):
@@ -68,6 +115,227 @@ def _replace_query_parameter(url, name, value):
     query = [(key, item) for key, item in parse_qsl(split_url.query, keep_blank_values=True) if key != name]
     query.append((name, str(value)))
     return urlunsplit((split_url.scheme, split_url.netloc, split_url.path, urlencode(query), split_url.fragment))
+
+
+def _normalise_icon_name(icon):
+    """Translate a Bootstrap 3 Glyphicon name to a Bootstrap Icons name."""
+    icon_name = str(icon).strip().lower()
+    for prefix in ("glyphicon-", "bi-"):
+        if icon_name.startswith(prefix):
+            icon_name = icon_name[len(prefix) :]
+            break
+    icon_name = BOOTSTRAP3_ICON_ALIASES.get(icon_name, icon_name)
+    if not _HTML_ID_PATTERN.fullmatch(icon_name):
+        raise template.TemplateSyntaxError(
+            "icon must contain only letters, numbers, underscores, or hyphens and must start with a letter."
+        )
+    return icon_name
+
+
+@register.simple_tag
+def bootstrap_icon(icon, extra_classes="", title=None):
+    """Render a Bootstrap Icon with Bootstrap 3-compatible arguments.
+
+    Args:
+        icon (str):
+            Bootstrap Icon or legacy Glyphicon name.
+
+    Keyword Parameters:
+        extra_classes (str):
+            Additional CSS classes for the icon.
+        title (str):
+            Accessible icon label and HTML title. Icons without a title are
+            marked as decorative.
+
+    Returns:
+        (SafeString):
+            Bootstrap Icons font markup.
+
+    Raises:
+        TemplateSyntaxError:
+            If the icon name cannot form a safe CSS class.
+
+    Examples:
+        Render a labelled icon:
+
+        .. code-block:: django
+
+            {% bootstrap_icon "info-sign" title="Information" %}
+    """
+    icon_name = _normalise_icon_name(icon)
+    classes = f"bi bi-{icon_name} {extra_classes}".strip()
+    attributes = {"class": classes}
+    if title:
+        attributes.update({"aria-label": title, "role": "img", "title": title})
+    else:
+        attributes["aria-hidden"] = "true"
+    return format_html("<i{}></i>", flatatt(attributes))
+
+
+@register.simple_tag
+def bootstrap_button(
+    content,
+    icon=None,
+    icon_position="start",
+    icon_extra_classes="",
+    icon_title=None,
+    aria_label=None,
+    button_class="btn-primary",
+    size="",
+    **kwargs,
+):
+    """Render a django-bootstrap5 button with optional legacy icon support.
+
+    Args:
+        content (str):
+            Visible button content.
+
+    Keyword Parameters:
+        icon (str):
+            Optional Bootstrap Icon or legacy Glyphicon name.
+        icon_position (str):
+            Place the icon at ``"start"`` or ``"end"``.
+        icon_extra_classes (str):
+            Additional icon CSS classes.
+        icon_title (str):
+            Optional accessible label for the icon.
+        aria_label (str):
+            Optional accessible label for the button, particularly useful for
+            icon-only buttons.
+        button_class (str):
+            Bootstrap button variant. Legacy ``btn-default`` becomes
+            ``btn-secondary``.
+        size (str):
+            Bootstrap 5 size. Legacy size names are translated.
+        ``**kwargs``:
+            Remaining arguments accepted by django-bootstrap5's button
+            renderer, including ``button_type``, ``href``, ``name``, and
+            arbitrary HTML attributes.
+
+    Returns:
+        (SafeString):
+            Bootstrap 5 button or link markup.
+
+    Raises:
+        TemplateSyntaxError:
+            If ``icon_position`` is invalid.
+        ImportError:
+            If the optional django-bootstrap5 dependency is unavailable.
+
+    Examples:
+        Port a Bootstrap 3 button containing a Glyphicon:
+
+        .. code-block:: django
+
+            {% bootstrap_button "Save" button_type="submit" icon="floppy-disk" %}
+    """
+    button_class = _BUTTON_CLASS_ALIASES.get(str(button_class), button_class)
+    size = _BUTTON_SIZE_ALIASES.get(str(size).lower(), size)
+    if aria_label is not None:
+        kwargs["aria-label"] = aria_label
+    if icon:
+        if icon_position not in {"start", "end"}:
+            raise template.TemplateSyntaxError("icon_position must be 'start' or 'end'.")
+        spacing_class = ""
+        if content:
+            spacing_class = "me-1" if icon_position == "start" else "ms-1"
+        icon_classes = " ".join(part for part in (spacing_class, str(icon_extra_classes)) if part)
+        icon_markup = bootstrap_icon(icon, extra_classes=icon_classes, title=icon_title)
+        if icon_position == "start":
+            content = format_html("{}{}", icon_markup, content)
+        else:
+            content = format_html("{}{}", content, icon_markup)
+
+    render_button = get_bootstrap5_render_button()
+    return render_button(content, button_class=button_class, size=size, **kwargs)
+
+
+class _BootstrapButtonsNode(template.Node):
+    """Render a Bootstrap 5 action row compatible with Bootstrap 3's block tag."""
+
+    def __init__(self, nodelist, arguments):
+        self.nodelist = nodelist
+        self.arguments = arguments
+
+    def render(self, context):
+        """Render configured submit and reset buttons followed by nested content."""
+        arguments = _resolve(self.arguments, context)
+        size = arguments.get("size", "")
+        buttons = []
+        if arguments.get("submit") is not None:
+            buttons.append(
+                bootstrap_button(
+                    arguments["submit"],
+                    button_type="submit",
+                    button_class=arguments.get("submit_class", "btn-primary"),
+                    size=size,
+                    icon=arguments.get("submit_icon"),
+                )
+            )
+        if arguments.get("reset") is not None:
+            buttons.append(
+                bootstrap_button(
+                    arguments["reset"],
+                    button_type="reset",
+                    button_class=arguments.get("reset_class", "btn-secondary"),
+                    size=size,
+                    icon=arguments.get("reset_icon"),
+                )
+            )
+
+        generated_buttons = format_html_join("", "{}", ((button,) for button in buttons))
+        attributes = {"class": arguments.get("wrapper_class", "mb-3 d-flex flex-wrap gap-2")}
+        return format_html("<div{}>{}{}</div>", flatatt(attributes), generated_buttons, self.nodelist.render(context))
+
+
+@register.tag("buttons")
+def do_bootstrap_buttons(parser, token):
+    """Parse a Bootstrap 3-compatible button-row block.
+
+    Args:
+        parser (Parser):
+            Active Django template parser.
+        token (Token):
+            Template token containing the tag arguments.
+
+    Returns:
+        (_BootstrapButtonsNode):
+            Compiled button-row node.
+
+    Raises:
+        TemplateSyntaxError:
+            If an unsupported or positional argument is supplied.
+
+    Examples:
+        Render form actions:
+
+        .. code-block:: django
+
+            {% buttons submit="Save" reset="Cancel" %}
+            {% endbuttons %}
+    """
+    tag_name = token.split_contents()[0]
+    end_tag = "endbuttons" if tag_name == "buttons" else "endbootstrap_buttons"
+    return _parse_block_tag(
+        parser,
+        token,
+        end_tag,
+        required_arguments=(),
+        allowed_arguments=(
+            "submit",
+            "reset",
+            "submit_class",
+            "reset_class",
+            "submit_icon",
+            "reset_icon",
+            "size",
+            "wrapper_class",
+        ),
+        node_class=_BootstrapButtonsNode,
+    )
+
+
+register.tag("bootstrap_buttons", do_bootstrap_buttons)
 
 
 @register.simple_tag
