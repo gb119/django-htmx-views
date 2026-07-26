@@ -1,4 +1,5 @@
 [![Tests](https://github.com/gb119/django-htmx-views/actions/workflows/tests.yml/badge.svg)](https://github.com/gb119/django-htmx-views/actions/workflows/tests.yml)
+[![Build](https://github.com/gb119/django-htmx-views/actions/workflows/build.yml/badge.svg)](https://github.com/gb119/django-htmx-views/actions/workflows/build.yml)
 
 # django-htmx-views
 
